@@ -1,0 +1,76 @@
+version: '3.4'
+services: 
+  postgres:
+    image: postgres:latest
+    container_name: postgres
+    environment:
+      POSTGRES_USER: 'orderBook'
+      POSTGRES_PASSWORD: '3baxRAdFPjcruQf'
+      POSTGRES_DB: 'orderBook' 
+    ports:
+      - '5432:5432'
+    expose:
+      - '5432'
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data
+    networks:
+      - rabbitmq_go_net
+  rabbitmq:
+    image: rabbitmq:3.12.12-management-alpine
+    container_name: 'rabbitmq'
+    ports:
+        - 5672:5672
+        - 15672:15672
+    volumes:
+        - ~/.docker-conf/rabbitmq/data/:/var/lib/rabbitmq/
+        - ~/.docker-conf/rabbitmq/log/:/var/log/rabbitmq
+    networks:
+        - rabbitmq_go_net
+  notifier_service:
+    container_name: notifier_service
+    build:
+      context: ./OrderBook.NotifierService/
+      dockerfile: Dockerfile
+    ports:
+      - "7097:7097"
+      - "5138:5138"
+      - "8787:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    depends_on:
+      - rabbitmq
+    networks:
+      - rabbitmq_go_net
+  orders_service:
+    container_name: orders_service
+    build:
+      context: ./OrderBook.Orders/
+      dockerfile: Dockerfile
+    ports:
+      - "3275:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    depends_on:
+      - rabbitmq
+      - postgres
+    networks:
+      - rabbitmq_go_net
+  wallet_service:
+    container_name: wallet_service
+    build:
+      context: ./OrderBook.Wallet/
+      dockerfile: Dockerfile
+    ports:
+      - "3276:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    depends_on:
+      - rabbitmq
+      - postgres
+    networks:
+      - rabbitmq_go_net
+
+
+networks:
+  rabbitmq_go_net:
+    driver: bridge
