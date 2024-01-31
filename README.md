@@ -8,6 +8,7 @@
 
 სვაგერები:
 Wallet Service - localhost:3276/swagger
+
 Order Service - localhost:3275/swagger
 
 სოკეტზე დასაკავშირებლად (postman-ით):
